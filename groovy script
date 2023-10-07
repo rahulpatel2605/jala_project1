@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout your source code from Git
+                checkout scm
+            }
+        }
+        stage('Build and Test') {
+            steps {
+                // Build and run unit tests
+                sh 'your_build_script.sh'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                // Build the Docker image
+                sh 'docker build -t your-image-name:${BUILD_NUMBER} .'
+            }
+        }
+        stage('Push to ACR') {
+            steps {
+                // Push Docker image to Azure Container Registry
+                sh 'docker push your-acr-url/your-image-name:${BUILD_NUMBER}'
+            }
+        }
+        stage('Deploy to VM') {
+            steps {
+                // SSH into your VM and deploy the Docker container
+                sh 'ssh your-vm-user@your-vm-ip "docker pull your-acr-url/your-image-name:${BUILD_NUMBER}"'
+            }
+        }
+        // Add more stages for validation and email notification
+    }
+}
