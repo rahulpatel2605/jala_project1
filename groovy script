@@ -32,5 +32,38 @@ pipeline {
             }
         }
         // Add more stages for validation and email notification
+
+        stage('Validation') {
+    steps {
+        script {
+            // Define your pipeline stages in the Jenkinsfile
+            // For example, here we're checking if the web app is accessible
+            sh 'curl http://your-vm-ip:80' // Example: Check if the app is accessible
+
+            // You can add more validation tasks as needed, such as running tests
+            sh 'npm test' // Example: Run additional tests
+
+            // Add any other validation tasks relevant to your application
+        }
+    }
+}
+
+        stage('Send Email Notification') {
+    steps {
+        script {
+            currentBuild.resultIsBetterOrEqualTo('SUCCESS') ? currentBuild.result = 'SUCCESS' : currentBuild.result = 'FAILURE'
+            
+            // Define your pipeline stages in the Jenkinsfile
+            // In this stage, we're sending an email notification based on the pipeline status
+            emailext (
+                subject: "Pipeline ${currentBuild.result}: Web App Deployment",
+                body: "The pipeline has completed with status ${currentBuild.result}.",
+                recipientProviders: [[$class: 'DevelopersRecipientProvider']],
+                to: 'your-email@example.com',
+            )
+        }
+    }
+}
+
     }
 }
