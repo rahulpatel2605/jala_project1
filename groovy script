@@ -51,7 +51,8 @@ pipeline {
         stage('Send Email Notification') {
     steps {
         script {
-            currentBuild.resultIsBetterOrEqualTo('SUCCESS') ? currentBuild.result = 'SUCCESS' : currentBuild.result = 'FAILURE'
+            currentBuild.resultIsBetterOrEqualTo('SUCCESS') ? currentBuild.result = 'SUCCESS' : { currentBuild.result = 'FAILURE' }
+
             
             // Define your pipeline stages in the Jenkinsfile
             // In this stage, we're sending an email notification based on the pipeline status
