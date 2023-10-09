@@ -4,7 +4,8 @@
 # You should replace the content below with the actual build commands for your project.
 
 # Example: Change to your project directory
-cd /path/to/your/project
+#cd /path/to/your/project
+cd .
 
 # Example: Install dependencies (if applicable)
 # npm install
