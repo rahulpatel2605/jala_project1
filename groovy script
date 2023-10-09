@@ -10,7 +10,7 @@ pipeline {
         stage('Build and Test') {
             steps {
                 // Build and run unit tests
-                sh 'your_build_script.sh'
+                sh './build_script.sh'
             }
         }
         stage('Build Docker Image') {
