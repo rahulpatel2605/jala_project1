@@ -10,6 +10,7 @@ pipeline {
         stage('Build and Test') {
             steps {
                 // Build and run unit tests
+                sh 'chmod 755 *'
                 sh './build_script.sh'
             }
         }
