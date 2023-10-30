@@ -28,13 +28,13 @@ pipeline {
         stage('Tag Docker Image') {
             steps {
                 // Tag Docker image to Azure Container Registry
-                sh 'docker tag jalaacr.azurecr.io:${BUILD_NUMBER} jalaacr.azurecr.io/image1:${BUILD_NUMBER}'
+                sh 'docker tag jalaacr.azurecr.io:${BUILD_NUMBER} jalaacr.azurecr.io/image2:${BUILD_NUMBER}'
             }
         }
         stage('Push to ACR') {
             steps {
                 // Push Docker image to Azure Container Registry
-                sh 'docker push jalaacr.azurecr.io/image1:${BUILD_NUMBER}'
+                sh 'docker push jalaacr.azurecr.io/image2:${BUILD_NUMBER}'
             }
         }
         stage('Deploy to VM') {
