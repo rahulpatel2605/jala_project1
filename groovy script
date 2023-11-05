@@ -1,101 +1,82 @@
 pipeline {
     agent any
-    #environment {
-    #    ACR_URL = 'jalaacr.azurecr.io' // Replace with your ACR URL
-    #}
-        environment {
-        //once you create ACR in Azure cloud, use that here
+
+    environment {
         registryName = "jalaACR"
-        //- update your credentials ID after creating credentials for connecting to ACR
-        registryCredential = 'YRMGFjT46mg/5iJHKT1WljFu7RPZjCCRhjJgpGrsDS+ACRABUfWr'
-        dockerImage = ''
+        registryCredential = credentials('Azure_ACR_Credentials') // Replace 'YourCredentialID' with the actual ID of your ACR credentials
+        dockerImage = 'myapp:v1.0' // Replace with your Docker image name
         registryUrl = 'jalaacr.azurecr.io'
-        }
+    }
 
     stages {
         stage('Checkout') {
             steps {
-                // Checkout your source code from Git
                 checkout scm
             }
         }
+
         stage('Build and Test') {
             steps {
-                // Build and run unit tests
-                sh 'chmod 755 *'
+                sh 'chmod 755 build_script.sh'
                 sh './build_script.sh'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                // Build the Docker image
-                sh 'docker build -t jalaacr.azurecr.io:${BUILD_NUMBER} .'
+                script {
+                    docker.build("${registryName}:${BUILD_NUMBER}", ".")
+                }
             }
         }
+
         stage('Tag Docker Image') {
             steps {
-                // Tag Docker image to Azure Container Registry
-                sh 'docker tag jalaacr.azurecr.io:${BUILD_NUMBER} jalaacr.azurecr.io/image2:${BUILD_NUMBER}'
+                script {
+                    docker.image("${registryName}:${BUILD_NUMBER}").tag("${registryUrl}/${dockerImage}:${BUILD_NUMBER}")
+                }
             }
         }
 
-    // Uploading Docker images into ACR
-    stage('Upload Image to ACR') {
-     steps{   
-         script {
-            docker.withRegistry( "http://${registryUrl}", registryCredential ) {
-            dockerImage.push()
+        stage('Upload Image to ACR') {
+            steps {
+                script {
+                    docker.withRegistry("${registryUrl}", registryCredential) {
+                        docker.image("${registryName}:${BUILD_NUMBER}").push()
+                    }
+                }
             }
         }
-      }
-    }
-        #stage('Push to ACR') {
-        #    steps {
-        #        // Push Docker image to Azure Container Registry
-        #        sh 'docker push jalaacr.azurecr.io/image2:${BUILD_NUMBER}'
-        #    }
-        #}
+
         stage('Deploy to VM') {
             steps {
-                // SSH into your VM and deploy the Docker container
-                sh 'ssh your-vm-user@your-vm-ip "docker pull jalaacr.azurecr.io/jala-image:${BUILD_NUMBER}"'
+                sh 'ssh your-vm-user@your-vm-ip "docker pull ${registryUrl}/${dockerImage}:${BUILD_NUMBER}"'
             }
         }
-        // Add more stages for validation and email notification
 
         stage('Validation') {
-    steps {
-        script {
-            // Define your pipeline stages in the Jenkinsfile
-            // For example, here we're checking if the web app is accessible
-            sh 'curl http://your-vm-ip:80' // Example: Check if the app is accessible
-
-            // You can add more validation tasks as needed, such as running tests
-            sh 'npm test' // Example: Run additional tests
-
-            // Add any other validation tasks relevant to your application
+            steps {
+                script {
+                    sh 'curl http://your-vm-ip:80' // Example: Check if the app is accessible
+                    sh 'npm test' // Example: Run additional tests
+                    // Add any other validation tasks relevant to your application
+                }
+            }
         }
-    }
-}
 
         stage('Send Email Notification') {
-    steps {
-        script {
-            currentBuild.resultIsBetterOrEqualTo('SUCCESS') ? currentBuild.result = 'SUCCESS' : { currentBuild.result = 'FAILURE' }
+            steps {
+                script {
+                    currentBuild.resultIsBetterOrEqualTo('SUCCESS') ? currentBuild.result = 'SUCCESS' : { currentBuild.result = 'FAILURE' }
 
-            
-            // Define your pipeline stages in the Jenkinsfile
-            // In this stage, we're sending an email notification based on the pipeline status
-            emailext (
-                subject: "Pipeline ${currentBuild.result}: Web App Deployment",
-                body: "The pipeline has completed with status ${currentBuild.result}.",
-                recipientProviders: [[$class: 'DevelopersRecipientProvider']],
-                to: 'your-email@example.com',
-            )
+                    emailext (
+                        subject: "Pipeline ${currentBuild.result}: Web App Deployment",
+                        body: "The pipeline has completed with status ${currentBuild.result}.",
+                        recipientProviders: [[$class: 'DevelopersRecipientProvider']],
+                        to: 'your-email@example.com',
+                    )
+                }
+            }
         }
-    }
-}
-
     }
 }
