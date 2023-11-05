@@ -4,7 +4,7 @@ pipeline {
     environment {
         registryName = "jalaacr"
         registryCredential = credentials('Azure_ACR_Credentials')
-        dockerImage = 'myapp-v1.0' // Modified image name
+        dockerImage = 'myapp:v1.0' // Replace with your Docker image name and tag
         registryUrl = 'jalaacr.azurecr.io'
     }
 
