@@ -4,10 +4,9 @@ pipeline {
     environment {
         registryName = "my_app" // Update the registry name as needed
         registryCredential = credentials('Azure_ACR_Credentials')
-        dockerImage = 'my_app:v1.0' // Replace with your Docker image name and tag
+        dockerImage = 'my_app:v1.0' // Update the image name and tag as needed
         registryUrl = 'jalaacr.azurecr.io'
     }
-
 
     stages {
         stage('Checkout') {
