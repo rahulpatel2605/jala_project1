@@ -30,10 +30,11 @@ pipeline {
             }
         }
 
+
         stage('Tag Docker Image') {
             steps {
                 script {
-                    docker.image("${registryName}:${BUILD_NUMBER}").tag("${registryUrl}/${dockerImage}:${BUILD_NUMBER}")
+                    docker.image("${registryName}:${BUILD_NUMBER}").tag("${registryUrl}/${dockerImage.replace(':', '_')}:${BUILD_NUMBER}")
                 }
             }
         }
