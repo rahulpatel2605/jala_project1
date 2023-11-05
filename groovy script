@@ -10,7 +10,7 @@ pipeline {
         registryCredential = 'YRMGFjT46mg/5iJHKT1WljFu7RPZjCCRhjJgpGrsDS+ACRABUfWr'
         dockerImage = ''
         registryUrl = 'jalaacr.azurecr.io'
-    }
+        }
 
     stages {
         stage('Checkout') {
