@@ -7,15 +7,34 @@ pipeline {
         VM_PASSWORD = 'Azureuser@123'
         IMAGE_NAME = "my-node-app"
         IMAGE_TAG = "${env.BUILD_NUMBER}"
+        ACR_NAME = 'your-acr-name'            // Replace with your Azure Container Registry name
+        ACR_RESOURCE_GROUP = 'your-acr-resource-group'  // Replace with your Azure resource group
+        ACR_REGISTRY_URL = "your-acr-name.azurecr.io"   // Replace with your ACR URL
     }
 
     stages {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the Docker image (assuming it's already built as per your previous steps)
-                    // Add this step if it's not already included:
-                    // sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                    // Build the Docker image
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                }
+            }
+        }
+
+        stage('Push to ACR') {
+            steps {
+                script {
+                    // Authenticate with ACR
+                    withCredentials([usernamePassword(credentialsId: 'Your_ACR_Credentials_ID', usernameVariable: 'ACR_USERNAME', passwordVariable: 'ACR_PASSWORD')]) {
+                        sh "docker login ${ACR_REGISTRY_URL} -u $ACR_USERNAME -p $ACR_PASSWORD"
+                    }
+
+                    // Tag the Docker image for ACR
+                    sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${ACR_REGISTRY_URL}/${IMAGE_NAME}:${IMAGE_TAG}"
+
+                    // Push the image to ACR
+                    sh "docker push ${ACR_REGISTRY_URL}/${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
         }
@@ -24,7 +43,7 @@ pipeline {
             steps {
                 script {
                     // Copy your Docker image to the VM
-                    sh "docker save ${IMAGE_NAME}:${IMAGE_TAG} | gzip | sshpass -p '${VM_PASSWORD}' ssh ${VM_USERNAME}@${VM_IP} 'gunzip | docker load'"
+                    sh "docker save ${IMAGE_NAME}:${IMAGE_TAG} | gzip | sshpass -p '${VM_PASSWORD}' ssh ${VM_USERNAME}@${VM_IP} 'gunzip | docker load -i -'"
 
                     // Start your Docker container on the VM
                     sh "sshpass -p '${VM_PASSWORD}' ssh ${VM_USERNAME}@${VM_IP} 'docker run -d -p 3000:3000 ${IMAGE_NAME}:${IMAGE_TAG}'"
