@@ -26,7 +26,7 @@ pipeline {
             steps {
                 script {
                     // Authenticate with ACR
-                    withCredentials([usernamePassword(credentialsId: 'Your_ACR_Credentials_ID', usernameVariable: 'ACR_USERNAME', passwordVariable: 'ACR_PASSWORD')]) {
+                    withCredentials([usernamePassword(credentialsId: 'Azure_ACR_Credentials', usernameVariable: 'ACR_USERNAME', passwordVariable: 'ACR_PASSWORD')]) {
                         sh "docker login ${ACR_REGISTRY_URL} -u $ACR_USERNAME -p $ACR_PASSWORD"
                     }
 
