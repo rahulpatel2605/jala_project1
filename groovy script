@@ -31,13 +31,13 @@ pipeline {
         }
 
 
-        stage('Tag Docker Image') {
-            steps {
-                script {
-                    docker.image("${registryName}:${BUILD_NUMBER}").tag("${registryUrl}/${dockerImage.replace(':', '_')}:${BUILD_NUMBER}")
-                }
-            }
-        }
+        #stage('Tag Docker Image') {
+        #    steps {
+        #        script {
+        #            docker.image("${registryName}:${BUILD_NUMBER}").tag("${registryUrl}/${dockerImage.replace(':', '_')}:${BUILD_NUMBER}")
+        #        }
+        #    }
+        #}
 
         stage('Upload Image to ACR') {
             steps {
