@@ -2,80 +2,35 @@ pipeline {
     agent any
 
     environment {
-        registryName = "my_app" // Update the registry name as needed
-        registryCredential = credentials('Azure_ACR_Credentials')
-        dockerImage = 'my_app:v1.0' // Update the image name and tag as needed
-        registryUrl = 'jalaacr.azurecr.io'
+        ACR_NAME = 'jalaACR'
+        ACR_RESOURCE_GROUP = 'jalap1-rg'
+        ACR_REGISTRY_URL = "jalaacr.azurecr.io"
+        IMAGE_NAME = "my-node-app"
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        AZURE_CREDENTIALS_ID = 'Azure_ACR_Credentials'
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Build and Test') {
-            steps {
-                sh 'chmod 755 build_script.sh'
-                sh './build_script.sh'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${registryName}:${BUILD_NUMBER}", ".")
+                    // Build the Docker image
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+
+                    // Tag the image for Azure Container Registry
+                    sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${ACR_REGISTRY_URL}/${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
         }
+    }
 
-
-        #stage('Tag Docker Image') {
-        #    steps {
-        #        script {
-        #            docker.image("${registryName}:${BUILD_NUMBER}").tag("${registryUrl}/${dockerImage.replace(':', '_')}:${BUILD_NUMBER}")
-        #        }
-        #    }
-        #}
-
-        stage('Upload Image to ACR') {
-            steps {
-                script {
-                    docker.withRegistry("${registryUrl}", registryCredential) {
-                        docker.image("${registryName}:${BUILD_NUMBER}").push()
-                    }
-                }
-            }
-        }
-
-        stage('Deploy to VM') {
-            steps {
-                sh 'ssh your-vm-user@your-vm-ip "docker pull ${registryUrl}/${dockerImage}:${BUILD_NUMBER}"'
-            }
-        }
-
-        stage('Validation') {
-            steps {
-                script {
-                    sh 'curl http://your-vm-ip:80' // Example: Check if the app is accessible
-                    sh 'npm test' // Example: Run additional tests
-                    // Add any other validation tasks relevant to your application
-                }
-            }
-        }
-
-        stage('Send Email Notification') {
-            steps {
-                script {
-                    currentBuild.resultIsBetterOrEqualTo('SUCCESS') ? currentBuild.result = 'SUCCESS' : { currentBuild.result = 'FAILURE' }
-
-                    emailext (
-                        subject: "Pipeline ${currentBuild.result}: Web App Deployment",
-                        body: "The pipeline has completed with status ${currentBuild.result}.",
-                        recipientProviders: [[$class: 'DevelopersRecipientProvider']],
-                        to: 'your-email@example.com',
-                    )
+    post {
+        success {
+            // Push the image to Azure Container Registry
+            script {
+                withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID, variable: 'AZURE_CREDENTIALS')]) {
+                    sh "az acr login --name ${ACR_NAME} --resource-group ${ACR_RESOURCE_GROUP}"
+                    sh "docker push ${ACR_REGISTRY_URL}/${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
         }
