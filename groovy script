@@ -7,7 +7,7 @@ pipeline {
         ACR_REGISTRY_URL = "jalaacr.azurecr.io"
         IMAGE_NAME = "my-node-app"
         IMAGE_TAG = "${env.BUILD_NUMBER}"
-        AZURE_CREDENTIALS_ID = 'Azure_ACR_Credentials'
+        USERNAME_WITH_PASSWORD_CREDENTIAL_ID = 'Azure_ACR_Credentials'
     }
 
     stages {
@@ -28,8 +28,8 @@ pipeline {
         success {
             // Push the image to Azure Container Registry
             script {
-                withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID, variable: 'AZURE_CREDENTIALS')]) {
-                    sh "az acr login --name ${ACR_NAME} --resource-group ${ACR_RESOURCE_GROUP}"
+                withCredentials([usernamePassword(credentialsId: USERNAME_WITH_PASSWORD_CREDENTIAL_ID, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh "az acr login --name ${ACR_NAME} --resource-group ${ACR_RESOURCE_GROUP} --username $USERNAME --password $PASSWORD"
                     sh "docker push ${ACR_REGISTRY_URL}/${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
