@@ -10,6 +10,7 @@ pipeline {
         USERNAME_WITH_PASSWORD_CREDENTIAL_ID = 'Azure_ACR_Credentials'
     }
 
+
     stages {
         stage('Build Docker Image') {
             steps {
