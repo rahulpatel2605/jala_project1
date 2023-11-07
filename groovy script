@@ -2,14 +2,12 @@ pipeline {
     agent any
 
     environment {
-        VM_IP = '20.235.242.107'
-        VM_USERNAME = 'azureuser'
-        VM_PASSWORD = 'Azureuser@123'
+        ACR_NAME = 'jalaACR'
+        ACR_RESOURCE_GROUP = 'jalap1-rg'
+        ACR_REGISTRY_URL = "jalaacr.azurecr.io"
         IMAGE_NAME = "my-node-app"
         IMAGE_TAG = "${env.BUILD_NUMBER}"
-        ACR_NAME = 'jalaACR'            // Replace with your Azure Container Registry name
-        ACR_RESOURCE_GROUP = 'jalap1-rg'  // Replace with your Azure resource group
-        ACR_REGISTRY_URL = "jalaacr.azurecr.io"   // Replace with your ACR URL
+        USERNAME_WITH_PASSWORD_CREDENTIAL_ID = 'Azure_ACR_Credentials'
     }
 
     stages {
@@ -18,35 +16,21 @@ pipeline {
                 script {
                     // Build the Docker image
                     sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
-                }
-            }
-        }
 
-        stage('Push to ACR') {
-            steps {
-                script {
-                    // Authenticate with ACR
-                    withCredentials([usernamePassword(credentialsId: 'Azure_ACR_Credentials', usernameVariable: 'ACR_USERNAME', passwordVariable: 'ACR_PASSWORD')]) {
-                        sh "docker login ${ACR_REGISTRY_URL} -u $ACR_USERNAME -p $ACR_PASSWORD"
-                    }
-
-                    // Tag the Docker image for ACR
+                    // Tag the image for Azure Container Registry
                     sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${ACR_REGISTRY_URL}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-                    // Push the image to ACR
-                    sh "docker push ${ACR_REGISTRY_URL}/${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
         }
+    }
 
-        stage('Deploy to VM') {
-            steps {
-                script {
-                    // Copy your Docker image to the VM
-                    sh "docker save ${IMAGE_NAME}:${IMAGE_TAG} | gzip | sshpass -p '${VM_PASSWORD}' ssh ${VM_USERNAME}@${VM_IP} 'gunzip | docker load -i -'"
-
-                    // Start your Docker container on the VM
-                    sh "sshpass -p '${VM_PASSWORD}' ssh ${VM_USERNAME}@${VM_IP} 'docker run -d -p 3000:3000 ${IMAGE_NAME}:${IMAGE_TAG}'"
+    post {
+        success {
+            // Push the image to Azure Container Registry
+            script {
+                withCredentials([usernamePassword(credentialsId: USERNAME_WITH_PASSWORD_CREDENTIAL_ID, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh "az acr login --name ${ACR_NAME} --resource-group ${ACR_RESOURCE_GROUP} --username $USERNAME --password $PASSWORD"
+                    sh "docker push ${ACR_REGISTRY_URL}/${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
         }
